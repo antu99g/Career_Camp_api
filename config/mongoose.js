@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
-// mongoose.connect(process.env.CAREER_CAMP_MONGODB_URL);
-mongoose.connect('mongodb://localhost/career_camp_delete');
+mongoose.connect(process.env.CAREER_CAMP_MONGODB_URL);
 
 const db = mongoose.connection;
 
