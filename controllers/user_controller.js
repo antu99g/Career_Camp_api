@@ -40,7 +40,7 @@ module.exports.login = async function (req, res) {
       let user = await User.findOne({ employeeId: req.body.employeeId });
 
       if (user && user.password == req.body.password) {
-         const token = jwt.sign({ employeeId: user._id }, process.env.SOCIAL_APP_JWT_SECRET);
+         const token = jwt.sign({ employeeId: user._id }, process.env.CAREER_CAMP_JWT_SECRET);
 
          return res.status(200).json({
             success: true,

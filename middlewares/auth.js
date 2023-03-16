@@ -6,7 +6,7 @@ module.exports.verifyUser = async function (req, res, next) {
       const bearerHeader = req.headers['authorization'];
       let bearer = bearerHeader.split(" ");
       let bearerToken = bearer[1];
-      const decoded = jwt.verify(bearerToken, process.env.SOCIAL_APP_JWT_SECRET);
+      const decoded = jwt.verify(bearerToken, process.env.CAREER_CAMP_JWT_SECRET);
       const user = await User.findById(decoded.employeeId);
       if (user) {
          req.employeeId = user._id;
