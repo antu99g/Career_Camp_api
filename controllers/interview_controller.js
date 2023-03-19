@@ -37,18 +37,19 @@ module.exports.createInterview = async function(req, res){
 			let students = [];
 		
 			if(req.body.students.length > 0){
-            // adding 'on hold' interview status (primary-status) for each student
+            // adding 'on hold' interview status (primary-status) to each student
             students = req.body.students.map((id) => {
                return { candidate: id, interviewStatus: "On hold" };
             });
          }
 			
-			req.body.students = students;
+			req.body.students = students; // replacing students array in req.body with array of objects
 		
 			const newInterview = await Interview.create(req.body);
 		
 			if (req.body.students.length > 0) {
 				for (let i of req.body.students) {
+               // adding interview info to each student of the created interview
 					const student = await Student.findById(i.candidate);
 					student.allInterview.push({
 						company: newInterview._id,
@@ -58,6 +59,7 @@ module.exports.createInterview = async function(req, res){
 				}
 			}
 
+         // populating new interview to return
 			await newInterview.populate({
             path: "students",
             populate: {
@@ -103,35 +105,46 @@ module.exports.deleteInterview = async function(req, res){
 // Setting interview-status
 module.exports.setInterviewStatus = async function(req, res){
 	try{
-		await Interview.updateOne(
-			{ '_id': req.body.interviewId, "students.candidate": req.body.studentId },
-			{
-				$set: {
-				"students.$.interviewStatus": req.body.interviewStatus,
-				},
-			}
-		  );
-	
-		if (req.body.interviewStatus == 'Pass'){
-			await Student.updateOne({ _id: req.body.studentId }, {placementStatus: 'Placed'});
-		}
-	
-		await Student.updateOne(
-			{ _id: req.body.studentId, "allInterview.company": req.body.interviewId },
-			{
-				$set: {
-					"allInterview.$.interviewStatus": req.body.interviewStatus,
-				},
-			}
-		);
-		
-		return res.status(200).json({
+      // updating interview status in interview
+      await Interview.updateOne(
+         {
+            _id: req.body.interviewId,
+            "students.candidate": req.body.studentId,
+         },
+         {
+            $set: {
+               "students.$.interviewStatus": req.body.interviewStatus,
+            },
+         }
+      );
+
+      // marking student as placed incase of 'pass' interview status
+      if (req.body.interviewStatus == "Pass") {
+         await Student.updateOne(
+            { _id: req.body.studentId },
+            { placementStatus: "Placed" }
+         );
+      }
+
+      // updating interview status in student
+      await Student.updateOne(
+         {
+            _id: req.body.studentId,
+            "allInterview.company": req.body.interviewId,
+         },
+         {
+            $set: {
+               "allInterview.$.interviewStatus": req.body.interviewStatus,
+            },
+         }
+      );
+
+      return res.status(200).json({
          success: true,
          studentId: req.body.studentId,
          newStatus: req.body.interviewStatus,
       });
-
-	}catch(err){
+   }catch(err){
       return res.json({
          success: false,
          flag: "Error in setting interview status",
@@ -148,10 +161,13 @@ module.exports.addNewStudent = async function(req, res){
 	
 			let interview = await Interview.findById(req.body.interviewId);
 			
-			let newStudent = interview.students.filter(s => s.candidate == req.body.studentId);
-		
-			if(newStudent.length == 0){		
-				interview.students.push({
+         // searching if the student is previouosly added to the interview
+			let newStudent = interview.students.filter(
+            (student) => student.candidate == req.body.studentId
+         );		
+         
+			if(newStudent.length == 0){ // if student isn't previously added
+				interview.students.push({ // adding student with 'on hold' status
 					candidate: req.body.studentId,
 					interviewStatus: 'On hold'
 				});
@@ -160,6 +176,7 @@ module.exports.addNewStudent = async function(req, res){
 		
 				let student = await Student.findById(req.body.studentId);
 	
+            // adding interview in students interview-list
 				student.allInterview.push({
 					company: interview._id,
 					interviewStatus: 'On hold'
@@ -171,7 +188,9 @@ module.exports.addNewStudent = async function(req, res){
                success: true,
                newStudent: { candidate: student, interviewStatus: "On hold" }
             });
-			}
+			} else {
+            throw new Error("Student already added");
+         }
 		}
 		else {
 			throw new Error("Didn't get sufficient data");
@@ -199,6 +218,7 @@ module.exports.downloadInterviewLog = async function(req, res){
 
 		let newInterviewList = [];
 
+      // structuring interviews to parse into csv
 		for(let i of interviews){
 			let interview = {
             companyName: i.companyName,
@@ -213,6 +233,7 @@ module.exports.downloadInterviewLog = async function(req, res){
 			newInterviewList.push(interview);
 		}
 
+      // Renaming fields before paring into csv
 		const fields = [
          { label: "Company Name", value: "companyName" },
          { label: "Interview Date", value: "interviewDate" },
