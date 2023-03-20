@@ -8,7 +8,8 @@ module.exports.signUp = async function (req, res) {
       if(req.body.employeeId && req.body.password){
          let user = await User.findOne({ employeeId: req.body.employeeId });
 
-         if (user) {         
+         if (user) {      
+            // if user already registered   
             return res.status(208).json({
                success: true,
                message: "User already registered",
@@ -40,6 +41,7 @@ module.exports.login = async function (req, res) {
       let user = await User.findOne({ employeeId: req.body.employeeId });
 
       if (user && user.password == req.body.password) {
+         // generating new jwt
          const token = jwt.sign({ employeeId: user._id }, process.env.CAREER_CAMP_JWT_SECRET);
 
          return res.status(200).json({

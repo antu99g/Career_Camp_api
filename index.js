@@ -16,6 +16,7 @@ const cors = require("cors");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// configuring cross-origin-requests (CORS)
 app.use(cors());
 
 // Routes

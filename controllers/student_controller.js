@@ -26,9 +26,8 @@ module.exports.allStudents = async function (req, res) {
 module.exports.addStudent = async function(req, res){
    try{
       if (req.body.name && req.body.batch && req.body.college) {
-         req.body.allInterview = [];
-         const newStudent = await Student.create(req.body);         
-         req.body.studentId = newStudent._id;
+         req.body.allInterview = []; // setting empty interview-list for new student
+         const newStudent = await Student.create(req.body);
          return res.status(200).json({
             success: true,
             student: newStudent,
@@ -50,7 +49,7 @@ module.exports.addStudent = async function(req, res){
 module.exports.deleteStudent = async function(req, res){
    try{
       await Student.findByIdAndDelete(req.params.id);
-      await Interview.updateMany(
+      await Interview.updateMany( // deleting student from all scheduled interviews
          {},
          { $pull: { students: { candidate: req.params.id } }},
          {safe: true, multi: true}
@@ -75,7 +74,7 @@ module.exports.downloadStudentsLog = async function(req, res){
    try{
       let students = await Student.find({});
 
-      // Removing ',' from date to include in csv
+      // Removing ',' from date for proper csv format
       students = students.map((student) => {
          student.batch = student.batch.replace(',', '_');
          student.batch = student.batch.replace(' ', '');
@@ -84,6 +83,7 @@ module.exports.downloadStudentsLog = async function(req, res){
       
       const fields = ['name', 'batch', 'college', 'dsaScore', 'webdScore', 'reactScore', 'placementStatus'];      
       
+      // parsing into csv
       const csvParser = new Parser({fields});
       const csv = csvParser.parse(students);
       

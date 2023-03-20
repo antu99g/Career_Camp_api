@@ -242,6 +242,7 @@ module.exports.downloadInterviewLog = async function(req, res){
       ];	
       const transforms = [unwind({ paths: ["students"], blankOut: true })];
 	
+      // parsing into csv
 		const json2csvParser = new Parser({ fields, transforms });
 		const csv = json2csvParser.parse(newInterviewList);
 	
